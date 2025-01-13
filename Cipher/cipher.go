@@ -5,8 +5,8 @@ import (
 )
 
 const Flag = false
-const ExpectedCRC32 = 0x196d401e
-const ExpectedCRC32_2 = 0x7a244a08
+const ExpectedCRC32 = 0x43b8f634  //0x196d401e
+const ExpectedCRC32_2 = 0xa1469479 //0x7a244a08
 
 const key = "\xbd\xb2\x3d\xbc\x20\xe2\x8c\x98" //some random numbers here
 

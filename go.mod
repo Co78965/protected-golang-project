@@ -1,3 +1,3 @@
 module code
 
-go 1.23.1
+go 1.21.1

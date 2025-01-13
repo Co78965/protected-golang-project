@@ -1,7 +1,7 @@
 package CheckDebug
 
 import (
-	"fmt"
+	"code/Cipher"
 	"os/exec"
 	"strings"
 	"syscall"
@@ -10,62 +10,63 @@ import (
 )
 
 var (
-	kernel32DLL                    = syscall.NewLazyDLL("kernel32.dll")
-	isDebugger                     = kernel32DLL.NewProc("IsDebuggerPresent")
-	procCheckRemoteDebuggerPresent = kernel32DLL.NewProc("CheckRemoteDebuggerPresent")
+	a                              = Cipher.Decrypt
+	kernel32DLL                    = syscall.NewLazyDLL(a("\xd6\xd7\x4f\xd2\x45\x8e\xbf\xaa\x93\xd6\x51\xd0"))
+	isDebugger                     = kernel32DLL.NewProc(a("\xf4\xc1\x79\xd9\x42\x97\xeb\xff\xd8\xc0\x6d\xce\x45\x91\xe9\xf6\xc9"))
+	procCheckRemoteDebuggerPresent = kernel32DLL.NewProc(a("\xfe\xda\x58\xdf\x4b\xb0\xe9\xf5\xd2\xc6\x58\xf8\x45\x80\xf9\xff\xda\xd7\x4f\xec\x52\x87\xff\xfd\xd3\xc6"))
 )
 
 func detectDebuggerByProcesses() bool {
-	// Используем команду 'tasklist' для Windows или 'ps' для UNIX-подобных систем
-	out, err := exec.Command("tasklist").Output() // Для UNIX заменить на "ps aux"
+	aa := Cipher.Decrypt
+	out, err := exec.Command(aa("\xc9\xd3\x4e\xd7\x4c\x8b\xff\xec")).Output()
 	if err != nil {
-		fmt.Println("Ошибка при выполнении команды:", err)
 		return false
 	}
 
 	processList := string(out)
-	// Проверяем наличие известных процессов дебаггеров
-	if strings.Contains(processList, "gdb") || strings.Contains(processList, "ida") || strings.Contains(processList, "x64dbg") {
+	if strings.Contains(processList, aa("\xda\xd6\x5f")) || strings.Contains(processList, aa("\xd4\xd6\x5c")) || strings.Contains(processList, aa("\xc5\x84\x09\xd8\x42\x85")) {
 		return true
 	}
 
 	return false
 }
 
-// if true --> debug detected
-func ntQueryInformationProcess() bool {
+func checkRemoteDebuggerPresent() bool {
 	var debuggerPresent byte
-	handle := syscall.Handle(0xFFFFFFFFFFFFFFFF) // Текущий процесс
-	_, _, _ = procCheckRemoteDebuggerPresent.Call(uintptr(handle), uintptr(unsafe.Pointer(&debuggerPresent)))
+	handle := syscall.Handle(0xFFFFFFFFFFFFFFFF)
+
+	ppp := procCheckRemoteDebuggerPresent.Call
+	_, _, _ = ppp(uintptr(handle), uintptr(unsafe.Pointer(&debuggerPresent)))
 
 	return debuggerPresent != 0
 }
 
-// if true --> debug detected
 func isDebuggerPresent1() bool {
-	flag, _, _ := isDebugger.Call()
+	ok := isDebugger.Call
+	flag, _, _ := ok()
 	return flag != 0
 }
 
 func isDebuggerPresent() bool {
-	return isDebuggerPresent1()
+	e := isDebuggerPresent1
+	return e()
 }
 
-// Выполняется при дебаге примерно за >3мс
 func detectDebuggerByTiming() bool {
 	start := time.Now()
 
-	// Простой код, выполнение которого не должно занимать много времени
 	for i := 0; i < 1000000; i++ {
 	}
 
 	elapsed := time.Since(start)
-	fmt.Printf("Время выполнения: %s\n", elapsed)
 
-	// Предположим, что если выполнение заняло больше 100 миллисекунд, это может быть из-за дебаггера
 	return elapsed > (time.Millisecond)
 }
 
 func CheckDebug() bool {
-	return (detectDebuggerByTiming() || isDebuggerPresent() || ntQueryInformationProcess() || detectDebuggerByProcesses())
+	a := detectDebuggerByTiming
+	b := isDebuggerPresent
+	c := checkRemoteDebuggerPresent
+	d := detectDebuggerByProcesses
+	return (a() || b() || c() || d())
 }

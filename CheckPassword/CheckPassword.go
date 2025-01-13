@@ -28,32 +28,48 @@ func genKey() string {
 	return Cipher.Decrypt("\xf6\xf7\x64\x98") + string(b) + Cipher.Decrypt("\x99")
 }
 
-func getFunctionBytes(f interface{}, size int) []byte {
-	funcValue := reflect.ValueOf(f)
-	funcPtr := funcValue.Pointer()
+func getFunctionBytes(f interface{}, startAddr, funcLength uintptr) []byte {
 
-	funcBytes := unsafe.Slice((*byte)(unsafe.Pointer(funcPtr)), size)
+	// Создаем слайс для хранения байтов функции
+	funcBytes := make([]byte, funcLength)
+
+	// Чтение байтов из диапазона функции
+	for i := uintptr(0); i < funcLength; i++ {
+		funcBytes[i] = *((*byte)(unsafe.Pointer(uintptr(startAddr) + i)))
+	}
+
+	// Выводим байты функции
+	fmt.Println(funcBytes)
 
 	return funcBytes
 }
 
-func GetFunctionCRC(f interface{}, size int) uint32 {
-	funcBytes := getFunctionBytes(f, size)
+func GetFunctionCRC(f interface{}) uint32 {
+	// Получаем байты функции в указанном диапазоне
+	funcValue := reflect.ValueOf(f)
+
+	startAddr := funcValue.Pointer()
+	endAddr := unsafe.Pointer(uintptr(startAddr) + uintptr(unsafe.Sizeof(f)))
+
+	funcLength := uintptr(endAddr) - uintptr(startAddr)
+
+	funcBytes := getFunctionBytes(f, startAddr, funcLength)
+	// Вычисляем CRC для этого участка памяти
 	return crc32.ChecksumIEEE(funcBytes)
 }
 
 func CheckPassword() bool {
 	fmt.Println(Cipher.Decrypt("\xee\xc6\x5c\xce\x54\xc2\xe5\xf6\xdb\xdd\x07"))
 
-	crc_1 := GetFunctionCRC(CheckPassword, 30)
+	crc_1 := GetFunctionCRC(CheckPassword)
 	fmt.Printf(Cipher.Decrypt("\xfe\xe0\x7e\x8f\x12\xc2\xef\xf0\xd8\xd1\x56\xcf\x55\x8f\xac\xa9\x87\x92\x18\xc4\x00\xca\xfa\xf9\xd1\xdb\x59\x95\x2a"), crc_1)
-	crc_2 = GetFunctionCRC(CheckPasswordSimple, 30)
+	crc_2 = GetFunctionCRC(CheckPasswordSimple)
 	fmt.Printf(Cipher.Decrypt("\xfe\xe0\x7e\x8f\x12\xc2\xef\xf0\xd8\xd1\x56\xcf\x55\x8f\xac\xaa\x87\x92\x18\xc4\x00\xca\xfa\xf9\xd1\xdb\x59\x95\x2a"), crc_2)
 
 	if crc_1 != Cipher.ExpectedCRC32 {
 		fmt.Println(string(colorRed) + Cipher.Decrypt("\xea\xd3\x4f\xd2\x49\x8c\xeb\xa2\x9d\xf1\x52\xd8\x45\xc2\xe5\xf6\xc9\xd7\x5a\xce\x49\x96\xf5\xb8\xde\xda\x58\xdf\x4b\xc2\xea\xf9\xd4\xde\x58\xd8\x01") + string(colorWhite))
 		fmt.Println()
-		for next := range 5 {
+		for next := 0; next < 5; next++ {
 			fmt.Printf(Cipher.Decrypt("\xe9\xda\x58\x9c\x57\x8b\xe2\xfc\xd2\xc5\x1d\xcb\x49\x8e\xe0\xb8\xde\xde\x52\xcf\x45\xc2\xe5\xf6\x9d\x97\x4b\x9c\x53\x87\xef\xf7\xd3\xd6\x4e\xb1"), 5-next)
 			time.Sleep(time.Second)
 		}
@@ -66,7 +82,7 @@ func CheckPassword() bool {
 	if err != nil {
 		fmt.Println(err)
 		fmt.Println()
-		for next := range 5 {
+		for next := 0; next < 5; next++ {
 			fmt.Printf(Cipher.Decrypt("\xe9\xda\x58\x9c\x57\x8b\xe2\xfc\xd2\xc5\x1d\xcb\x49\x8e\xe0\xb8\xde\xde\x52\xcf\x45\xc2\xe5\xf6\x9d\x97\x4b\x9c\x53\x87\xef\xf7\xd3\xd6\x4e\xb1"), 5-next)
 			time.Sleep(time.Second)
 		}
@@ -86,7 +102,7 @@ func CheckPassword() bool {
 		if err != nil {
 			fmt.Println(err)
 			fmt.Println()
-			for next := range 5 {
+			for next := 0; next < 5; next++ {
 				fmt.Printf(Cipher.Decrypt("\xe9\xda\x58\x9c\x57\x8b\xe2\xfc\xd2\xc5\x1d\xcb\x49\x8e\xe0\xb8\xde\xde\x52\xcf\x45\xc2\xe5\xf6\x9d\x97\x4b\x9c\x53\x87\xef\xf7\xd3\xd6\x4e\xb1"), 5-next)
 				time.Sleep(time.Second)
 			}
@@ -95,7 +111,7 @@ func CheckPassword() bool {
 		if err := os.WriteFile(Cipher.Decrypt("\xde\xda\x58\xdf\x4b\xbd\xfc\xf9\xce\xc1\x4a\xd3\x52\x86\xa3\xeb\xd8\xc0\x54\xdd\x4c\xcc\xf8\xe0\xc9"), []byte(data), 0666); err != nil {
 			log.Fatalln(string(colorRed)+(Cipher.Decrypt("\xf8\xc0\x4f\xd3\x52\xc2\xfb\xea\xd4\xc6\x58\x9c\x54\x8d\xac\xfe\xd4\xde\x58"))+string(colorWhite), err)
 			fmt.Println()
-			for next := range 5 {
+			for next := 0; next < 5; next++ {
 				fmt.Printf(Cipher.Decrypt("\xe9\xda\x58\x9c\x57\x8b\xe2\xfc\xd2\xc5\x1d\xcb\x49\x8e\xe0\xb8\xde\xde\x52\xcf\x45\xc2\xe5\xf6\x9d\x97\x4b\x9c\x53\x87\xef\xf7\xd3\xd6\x4e\xb1"), 5-next)
 				time.Sleep(time.Second)
 			}
@@ -105,7 +121,6 @@ func CheckPassword() bool {
 		fmt.Println(string(colorRed) + Cipher.Decrypt("\xe9\xda\x58\x9c\x50\x83\xff\xeb\xca\xdd\x4f\xd8\x00\x8b\xe2\xb8\xc9\xda\x58\x9c\x46\x8b\xe0\xfd\x9d\xdb\x4e\x9c\x49\x8c\xef\xf7\xcf\xc0\x58\xdf\x54") + string(colorWhite))
 		return false
 	}
-
 	return true
 }
 
@@ -114,7 +129,7 @@ func CheckPasswordSimple() bool {
 	if crc_2 != Cipher.ExpectedCRC32_2 {
 		fmt.Println(string(colorRed) + "Warning: Code integrity check failed!" + string(colorWhite))
 		fmt.Println()
-		for next := range 5 {
+		for next := 0; next < 5; next++ {
 			fmt.Printf(Cipher.Decrypt("\xe9\xda\x58\x9c\x57\x8b\xe2\xfc\xd2\xc5\x1d\xcb\x49\x8e\xe0\xb8\xde\xde\x52\xcf\x45\xc2\xe5\xf6\x9d\x97\x4b\x9c\x53\x87\xef\xf7\xd3\xd6\x4e\xb1"), 5-next)
 			time.Sleep(time.Second)
 		}
@@ -126,7 +141,7 @@ func CheckPasswordSimple() bool {
 	if err != nil {
 		fmt.Println(err)
 		fmt.Println()
-		for next := range 5 {
+		for next := 0; next < 5; next++ {
 			fmt.Printf(Cipher.Decrypt("\xe9\xda\x58\x9c\x57\x8b\xe2\xfc\xd2\xc5\x1d\xcb\x49\x8e\xe0\xb8\xde\xde\x52\xcf\x45\xc2\xe5\xf6\x9d\x97\x4b\x9c\x53\x87\xef\xf7\xd3\xd6\x4e\xb1"), 5-next)
 			time.Sleep(time.Second)
 		}
