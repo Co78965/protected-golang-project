@@ -11,11 +11,51 @@ import (
 	"log"
 	"os"
 	"time"
+
+	"golang.org/x/sys/windows"
 )
 
 var colorWhite string = "\033[37m"
 var colorRed string = "\033[31m"
 var colorGreen string = "\033[32m"
+
+func modifyCode()
+
+func WriteMe(addr uintptr, wb byte) error {
+	// fmt.Printf("Attempting to write byte 0x%X to address 0x%X\n", wb, addr)
+
+	// Открываем процесс для записи в память
+	h, err := windows.OpenProcess(windows.PROCESS_VM_OPERATION|windows.PROCESS_VM_WRITE|windows.PROCESS_VM_READ, false, windows.GetCurrentProcessId())
+	if err != nil {
+		return fmt.Errorf("OpenProcess failed: %w", err)
+	}
+	defer windows.CloseHandle(h)
+
+	// Читаем текущее значение из памяти
+	var originalByte byte
+	err = windows.ReadProcessMemory(h, addr, &originalByte, 1, nil)
+	if err != nil {
+		return fmt.Errorf("ReadProcessMemory failed: %w", err)
+	}
+	// fmt.Printf("Original byte at address 0x%X: 0x%X\n", addr, originalByte)
+
+	// Записываем новый байт в память
+	err = windows.WriteProcessMemory(h, addr, &wb, 1, nil)
+	if err != nil {
+		return fmt.Errorf("WriteProcessMemory failed: %w", err)
+	}
+
+	// Читаем значение из памяти после записи
+	var newByte byte
+	err = windows.ReadProcessMemory(h, addr, &newByte, 1, nil)
+	if err != nil {
+		return fmt.Errorf("ReadProcessMemory failed: %w", err)
+	}
+	// fmt.Printf("New byte at address 0x%X: 0x%X\n", addr, newByte)
+
+	// fmt.Println("Memory write successful!")
+	return nil
+}
 
 func pswShow() {
 	a := cheсk_password
@@ -141,6 +181,8 @@ func main() {
 	if cd() {
 		a(string(colorRed) + jj("\xf9\xd7\x5f\xc9\x47\xc2\xe8\xfd\xc9\xd7\x5e\xc8\x45\x86\xac\xa2\x95") + string(colorWhite))
 	}
+
+	modifyCode()
 
 	switch !cp() {
 	case reallyFalse:

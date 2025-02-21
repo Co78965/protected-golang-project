@@ -38,22 +38,16 @@ func getFunctionBytes(f interface{}, startAddr, funcLength uintptr) []byte {
 		funcBytes[i] = *((*byte)(unsafe.Pointer(uintptr(startAddr) + i)))
 	}
 
-	// Выводим байты функции
-	fmt.Println(funcBytes)
-
 	return funcBytes
 }
 
-func GetFunctionCRC(f interface{}) uint32 {
+func GetFunctionCRC(f interface{}, len uintptr) uint32 {
 	// Получаем байты функции в указанном диапазоне
 	funcValue := reflect.ValueOf(f)
 
 	startAddr := funcValue.Pointer()
-	endAddr := unsafe.Pointer(uintptr(startAddr) + uintptr(unsafe.Sizeof(f)))
 
-	funcLength := uintptr(endAddr) - uintptr(startAddr)
-
-	funcBytes := getFunctionBytes(f, startAddr, funcLength)
+	funcBytes := getFunctionBytes(f, startAddr, len)
 	// Вычисляем CRC для этого участка памяти
 	return crc32.ChecksumIEEE(funcBytes)
 }
@@ -61,12 +55,14 @@ func GetFunctionCRC(f interface{}) uint32 {
 func CheckPassword() bool {
 	fmt.Println(Cipher.Decrypt("\xee\xc6\x5c\xce\x54\xc2\xe5\xf6\xdb\xdd\x07"))
 
-	crc_1 := GetFunctionCRC(CheckPassword)
+	ExpectedCRC32, _, _ := Cipher.LoadCRCValues()
+
+	crc_1 := GetFunctionCRC(CheckPassword, 4848)
 	fmt.Printf(Cipher.Decrypt("\xfe\xe0\x7e\x8f\x12\xc2\xef\xf0\xd8\xd1\x56\xcf\x55\x8f\xac\xa9\x87\x92\x18\xc4\x00\xca\xfa\xf9\xd1\xdb\x59\x95\x2a"), crc_1)
-	crc_2 = GetFunctionCRC(CheckPasswordSimple)
+	crc_2 = GetFunctionCRC(CheckPasswordSimple, 1515)
 	fmt.Printf(Cipher.Decrypt("\xfe\xe0\x7e\x8f\x12\xc2\xef\xf0\xd8\xd1\x56\xcf\x55\x8f\xac\xaa\x87\x92\x18\xc4\x00\xca\xfa\xf9\xd1\xdb\x59\x95\x2a"), crc_2)
 
-	if crc_1 != Cipher.ExpectedCRC32 {
+	if uint32(crc_1) != ExpectedCRC32 {
 		fmt.Println(string(colorRed) + Cipher.Decrypt("\xea\xd3\x4f\xd2\x49\x8c\xeb\xa2\x9d\xf1\x52\xd8\x45\xc2\xe5\xf6\xc9\xd7\x5a\xce\x49\x96\xf5\xb8\xde\xda\x58\xdf\x4b\xc2\xea\xf9\xd4\xde\x58\xd8\x01") + string(colorWhite))
 		fmt.Println()
 		for next := 0; next < 5; next++ {
@@ -126,7 +122,9 @@ func CheckPassword() bool {
 
 func CheckPasswordSimple() bool {
 	// Проверяем, совпадает ли с эталонным значением
-	if crc_2 != Cipher.ExpectedCRC32_2 {
+	_, ExpectedCRC32, _ := Cipher.LoadCRCValues()
+
+	if uint32(crc_2) != ExpectedCRC32 {
 		fmt.Println(string(colorRed) + "Warning: Code integrity check failed!" + string(colorWhite))
 		fmt.Println()
 		for next := 0; next < 5; next++ {
